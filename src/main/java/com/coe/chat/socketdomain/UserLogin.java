@@ -1,9 +1,6 @@
 package com.coe.chat.socketdomain;
 
-import java.io.Serializable;
-
-public class UserLogin implements Serializable {
-	private static final long serialVersionUID = 2524306631468822735L;
+public class UserLogin  {
 	private String username;
 	private String password;
 

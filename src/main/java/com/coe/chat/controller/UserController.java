@@ -1,32 +1,68 @@
 package com.coe.chat.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.stereotype.Controller;
 
+import com.coe.chat.domain.Message;
 import com.coe.chat.domain.User;
 import com.coe.chat.socketdomain.UserLogin;
 
 @Controller
 public class UserController {
+    @Autowired
+    private SimpMessageSendingOperations messagingTemplate;
+    
+    private static Map<String, String> sessionMap = new HashMap<>();
+    
+    
 	@MessageMapping("login")
-	@SendTo("client/login")
-	public String login(UserLogin userLogin) throws InterruptedException {
+	@SendTo("/client/login")
+	public User login(UserLogin userLogin, SimpMessageHeaderAccessor accessor) throws InterruptedException {
 		Thread.sleep(1000);
-		System.out.println(userLogin);
-		String result = "FAIL";
-		if (userLogin.getUsername() != null && isValidUser(userLogin.getUsername())) {
-			result = "SUCCESS";
+		System.out.println(accessor.getSessionId());
+		if (sessionMap.get(userLogin.getUsername()) == null) {
+			sessionMap.put(userLogin.getUsername(), accessor.getSessionId());
+			System.out.println(sessionMap);
 		}
-		System.out.println(result);
-		return result;
+		if (userLogin.getUsername() != null) {
+			return getUser(userLogin.getUsername());
+		}
+		return null;
+	}
+	
+    
+    
+	@MessageMapping("message")
+	public void sendMessage(Message message, SimpMessageHeaderAccessor accessor) throws InterruptedException {
+		Thread.sleep(1000);
+		System.out.println(message.getReceiver());
+		System.out.println(sessionMap);
+		String recieverSessionId = sessionMap.get(message.getReceiver());
+		System.out.println(recieverSessionId);
+		if (recieverSessionId != null) {
+			messagingTemplate.convertAndSendToUser(recieverSessionId, "/queue/message", message, createHeaders(recieverSessionId));
+		}
 	}
 
-	private boolean isValidUser(String username) {
-		boolean result = false;
+	private MessageHeaders createHeaders(String sessionId) {
+        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+        headerAccessor.setSessionId(sessionId);
+        headerAccessor.setLeaveMutable(true);
+        return headerAccessor.getMessageHeaders();
+    }
+	
+	private User getUser(String username) {
 		List<User> users = new ArrayList<>();
 		User user;
 
@@ -46,9 +82,9 @@ public class UserController {
 
 		for (User userLoop : users) {
 			if (username != null && username.equalsIgnoreCase(userLoop.getUsername())) {
-				result = true;
+				return userLoop;
 			}
 		}
-		return result;
+		return null;
 	}
 }

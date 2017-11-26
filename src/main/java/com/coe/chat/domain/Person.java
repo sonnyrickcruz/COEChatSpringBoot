@@ -1,9 +1,6 @@
 package com.coe.chat.domain;
 
-import java.io.Serializable;
-
-public class Person implements Serializable {
-	private static final long serialVersionUID = 5621530949083046332L;
+public class Person{
 	private String firstName;
 	private String lastName;
 	private String gender;
