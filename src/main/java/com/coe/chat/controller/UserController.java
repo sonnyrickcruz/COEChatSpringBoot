@@ -20,15 +20,13 @@ import com.coe.chat.socketdomain.UserLogin;
 
 @Controller
 public class UserController {
-    @Autowired
-    private SimpMessageSendingOperations messagingTemplate;
-    
-    private static Map<String, String> sessionMap = new HashMap<>();
-    
-    
+	@Autowired
+	private SimpMessageSendingOperations messagingTemplate;
+
+	private static Map<String, String> sessionMap = new HashMap<>();
+
 	@MessageMapping("login")
-	@SendTo("/client/login")
-	public User login(UserLogin userLogin, SimpMessageHeaderAccessor accessor) throws InterruptedException {
+	public void login(UserLogin userLogin, SimpMessageHeaderAccessor accessor) throws InterruptedException {
 		Thread.sleep(1000);
 		System.out.println(accessor.getSessionId());
 		if (sessionMap.get(userLogin.getUsername()) == null) {
@@ -36,13 +34,11 @@ public class UserController {
 			System.out.println(sessionMap);
 		}
 		if (userLogin.getUsername() != null) {
-			return getUser(userLogin.getUsername());
+			messagingTemplate.convertAndSendToUser(sessionMap.get(userLogin.getUsername()), "/client/login",
+					getUser(userLogin.getUsername()), createHeaders(sessionMap.get(userLogin.getUsername())));
 		}
-		return null;
 	}
-	
-    
-    
+
 	@MessageMapping("message")
 	public void sendMessage(Message message, SimpMessageHeaderAccessor accessor) throws InterruptedException {
 		Thread.sleep(1000);
@@ -51,17 +47,18 @@ public class UserController {
 		String recieverSessionId = sessionMap.get(message.getReceiver());
 		System.out.println(recieverSessionId);
 		if (recieverSessionId != null) {
-			messagingTemplate.convertAndSendToUser(recieverSessionId, "/queue/message", message, createHeaders(recieverSessionId));
+			messagingTemplate.convertAndSendToUser(recieverSessionId, "/queue/message", message,
+					createHeaders(recieverSessionId));
 		}
 	}
 
 	private MessageHeaders createHeaders(String sessionId) {
-        SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
-        headerAccessor.setSessionId(sessionId);
-        headerAccessor.setLeaveMutable(true);
-        return headerAccessor.getMessageHeaders();
-    }
-	
+		SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+		headerAccessor.setSessionId(sessionId);
+		headerAccessor.setLeaveMutable(true);
+		return headerAccessor.getMessageHeaders();
+	}
+
 	private User getUser(String username) {
 		List<User> users = new ArrayList<>();
 		User user;
@@ -75,6 +72,22 @@ public class UserController {
 
 		user = new User();
 		user.setUsername("user2");
+		user.setFirstName("test");
+		user.setLastName("test");
+		user.setGender("F");
+		users.add(user);
+
+		user = new User();
+		user.setUsername("user3");
+		user.setFirstName("test");
+		user.setLastName("test");
+		user.setGender("F");
+		users.add(user);
+		
+
+
+		user = new User();
+		user.setUsername("user4");
 		user.setFirstName("test");
 		user.setLastName("test");
 		user.setGender("F");
