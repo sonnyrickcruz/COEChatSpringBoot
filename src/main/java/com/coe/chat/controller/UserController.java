@@ -43,8 +43,7 @@ public class UserController {
 				System.out.println(sessionMap);
 			}
 			if (userLogin.getUsername() != null) {
-				messagingTemplate.convertAndSendToUser(sessionMap.get(userLogin.getUsername()), "/client/login",
-						getUser(userLogin.getUsername()), createHeaders(sessionMap.get(userLogin.getUsername())));
+				messagingTemplate.convertAndSendToUser("username", "/client/login", getUser(userLogin.getUsername()));
 			}
 		}
 	}
@@ -62,8 +61,7 @@ public class UserController {
 			for (String userName : sessionMap.keySet()) {
 				if (userName != null) {
 					System.out.print(userName);
-					messagingTemplate.convertAndSendToUser(sessionMap.get(userName), "/client/online", users,
-							createHeaders(sessionMap.get(userName)));
+					messagingTemplate.convertAndSendToUser("username", "/client/online", users);
 				}
 				System.out.println();
 			}
